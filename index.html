@@ -1,0 +1,577 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Impossible Coin Game</title>
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+            background-color: #0a1929;
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            color: white;
+        }
+        #game-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
+            margin: 20px auto;
+            background-color: #101f33;
+            overflow: hidden;
+            border-radius: 12px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+            border: 1px solid #1e3a5f;
+        }
+        #player {
+            position: absolute;
+            width: 30px;
+            height: 30px;
+            background-color: #4dabf7;
+            border-radius: 50%;
+            box-shadow: 0 0 10px rgba(77, 171, 247, 0.6);
+            transition: box-shadow 0.2s ease;
+        }
+        #helper {
+            position: absolute;
+            width: 40px;
+            height: 40px;
+            background-color: #ffffff;
+            border-radius: 50%;
+            border: 3px solid #90caf9;
+            box-shadow: 0 0 20px #4fc3f7;
+            z-index: 10;
+            display: none;
+        }
+        .coin {
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background-color: #ffeb3b;
+            border-radius: 50%;
+            box-shadow: 0 0 8px rgba(255, 235, 59, 0.8);
+        }
+        #hud {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            padding: 12px 18px;
+            background-color: rgba(13, 31, 61, 0.7);
+            border-radius: 8px;
+            border: 1px solid #274472;
+            backdrop-filter: blur(3px);
+            font-weight: 500;
+            letter-spacing: 0.5px;
+        }
+        #start-screen, #game-over, #helper-message {
+            display: flex;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(10, 25, 41, 0.95);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 20px;
+            box-sizing: border-box;
+            backdrop-filter: blur(5px);
+        }
+        #game-over, #helper-message {
+            display: none;
+        }
+        #pixel-jesus {
+            image-rendering: pixelated;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+            filter: drop-shadow(0 0 15px rgba(79, 195, 247, 0.5));
+        }
+        #message, #instructions, #helper-text {
+            font-size: 24px;
+            line-height: 1.6;
+            max-width: 600px;
+            margin-bottom: 25px;
+            color: #e3f2fd;
+        }
+        #instructions {
+            font-size: 18px;
+        }
+        .game-title {
+            font-size: 48px;
+            margin-bottom: 15px;
+            color: #ffffff;
+            text-shadow: 0 0 15px rgba(77, 171, 247, 0.8);
+            font-weight: 700;
+            letter-spacing: 1px;
+        }
+        .subtitle {
+            font-size: 24px;
+            margin-bottom: 30px;
+            color: #64b5f6;
+            letter-spacing: 0.5px;
+        }
+        button {
+            margin-top: 20px;
+            padding: 12px 24px;
+            background-color: #2196f3;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            letter-spacing: 0.5px;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(33, 150, 243, 0.4);
+        }
+        button:hover {
+            background-color: #0d8bf2;
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(33, 150, 243, 0.5);
+        }
+        button:active {
+            transform: translateY(1px);
+        }
+        .learn-more-btn {
+            background-color: #0d47a1;
+            margin-top: 15px;
+        }
+        .learn-more-btn:hover {
+            background-color: #1565c0;
+        }
+        .controls {
+            background-color: rgba(25, 49, 83, 0.7);
+            padding: 18px;
+            border-radius: 10px;
+            margin-top: 15px;
+            border: 1px solid #274472;
+        }
+        #coin-count, #timer {
+            color: #4fc3f7;
+            font-weight: bold;
+        }
+        .glow-effect {
+            animation: glowing 2s infinite alternate;
+        }
+        @keyframes glowing {
+            from {
+                box-shadow: 0 0 10px rgba(77, 171, 247, 0.6);
+            }
+            to {
+                box-shadow: 0 0 20px rgba(77, 171, 247, 0.9);
+            }
+        }
+        #helper-text {
+            animation: fadeIn 1s ease-out;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(-10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="player" class="glow-effect"></div>
+        <div id="helper"></div>
+        <div id="hud">
+            <div>Coins: <span id="coin-count">0</span>/50</div>
+            <div>Time: <span id="timer">25</span>s</div>
+        </div>
+        
+        <div id="start-screen">
+            <h1 class="game-title">Coin Collection Challenge</h1>
+            <h2 class="subtitle">Can you get 50 coins in 25 seconds?</h2>
+            
+            <div id="instructions">
+                <p>Collect as many coins as you can before time runs out!</p>
+                <div class="controls">
+                    <p>Controls:</p>
+                    <p>Move with WASD or arrow keys</p>
+                    <p>Goal: Collect 50 coins in 25 seconds</p>
+                </div>
+            </div>
+            
+            <button id="start-button">Start Game</button>
+        </div>
+        
+        <div id="helper-message">
+            <div id="helper-text">
+                "You did your best, I am merciful, let me help you."
+            </div>
+        </div>
+        
+        <div id="game-over">
+            <div id="pixel-jesus-container">
+                <!-- Pixelated cross/Jesus representation -->
+                <canvas id="pixel-jesus" width="32" height="32"></canvas>
+            </div>
+            <div id="message">
+                We will always be in debt.<br>
+                Jesus Christ makes it possible for us to win,<br>
+                and through Him we can see God again.
+            </div>
+            <button id="play-again">Play Again</button>
+            <a href="https://www.churchofjesuschrist.org/welcome/what-do-latter-day-saints-believe?lang=eng" target="_blank">
+                <button class="learn-more-btn">Learn More about Jesus Christ</button>
+            </a>
+        </div>
+    </div>
+
+    <script>
+        // Game variables
+        const player = document.getElementById('player');
+        const helper = document.getElementById('helper');
+        const gameContainer = document.getElementById('game-container');
+        const coinCountElement = document.getElementById('coin-count');
+        const timerElement = document.getElementById('timer');
+        const startScreen = document.getElementById('start-screen');
+        const startButton = document.getElementById('start-button');
+        const gameOverScreen = document.getElementById('game-over');
+        const helperMessageScreen = document.getElementById('helper-message');
+        const playAgainButton = document.getElementById('play-again');
+        const pixelJesus = document.getElementById('pixel-jesus');
+        const hud = document.getElementById('hud');
+        
+        let playerX = 385;
+        let playerY = 285;
+        let helperX = -50; // Start off-screen
+        let helperY = -50;
+        let coins = [];
+        let coinCount = 0;
+        let timeLeft = 25;
+        let gameActive = false;
+        let playerSpeed = 5;
+        let timerInterval;
+        let helperActive = false;
+        let helperAnimationFrame;
+        let coinsToCollect = 50; // Changed from 100 to 50
+        
+        // Keys state
+        const keys = {};
+        
+        // Initialize the game
+        function init() {
+            // Reset variables
+            playerX = 385;
+            playerY = 285;
+            helperX = -50;
+            helperY = -50;
+            coins = [];
+            coinCount = 0;
+            timeLeft = 25;
+            gameActive = true;
+            helperActive = false;
+            
+            // Update DOM
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+            helper.style.display = 'none';
+            coinCountElement.textContent = coinCount;
+            timerElement.textContent = timeLeft;
+            
+            // Show HUD
+            hud.style.display = 'block';
+            
+            // Hide all screens
+            startScreen.style.display = 'none';
+            gameOverScreen.style.display = 'none';
+            helperMessageScreen.style.display = 'none';
+            
+            // Remove all existing coins
+            document.querySelectorAll('.coin').forEach(coin => coin.remove());
+            
+            // Start the game loop
+            gameLoop();
+            
+            // Start the timer
+            startTimer();
+            
+            // Create initial coins
+            for (let i = 0; i < 5; i++) {
+                createCoin();
+            }
+        }
+        
+        // Game loop
+        function gameLoop() {
+            if (!gameActive) return;
+            
+            // Player movement
+            if (keys['ArrowUp'] || keys['w']) {
+                playerY = Math.max(0, playerY - playerSpeed);
+            }
+            if (keys['ArrowDown'] || keys['s']) {
+                playerY = Math.min(gameContainer.clientHeight - player.clientHeight, playerY + playerSpeed);
+            }
+            if (keys['ArrowLeft'] || keys['a']) {
+                playerX = Math.max(0, playerX - playerSpeed);
+            }
+            if (keys['ArrowRight'] || keys['d']) {
+                playerX = Math.min(gameContainer.clientWidth - player.clientWidth, playerX + playerSpeed);
+            }
+            
+            // Update player position
+            player.style.left = playerX + 'px';
+            player.style.top = playerY + 'px';
+            
+            // Check for coin collisions
+            if (!helperActive) {
+                checkCoinCollisions(player, false);
+            } else {
+                // Move helper towards nearest coin
+                moveHelperTowardsCoin();
+                checkCoinCollisions(helper, true);
+                
+                // Update helper position
+                helper.style.left = helperX + 'px';
+                helper.style.top = helperY + 'px';
+            }
+            
+            // Ensure we always have enough coins on screen
+            if (coins.length < 5 && !helperActive) {
+                createCoin();
+            }
+            
+            // Continue the game loop
+            helperAnimationFrame = requestAnimationFrame(gameLoop);
+        }
+        
+        // Start the timer
+        function startTimer() {
+            // Clear any existing timer
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            
+            timerInterval = setInterval(() => {
+                timeLeft--;
+                timerElement.textContent = timeLeft;
+                
+                // When time is up, show the helper
+                if (timeLeft <= 0 && !helperActive && coinCount < coinsToCollect) {
+                    activateHelper();
+                }
+                
+                // End game if reached goal
+                if (coinCount >= coinsToCollect) {
+                    clearInterval(timerInterval);
+                    setTimeout(() => {
+                        endGame();
+                    }, 500);
+                }
+            }, 1000);
+        }
+        
+        // Create a new coin
+        function createCoin() {
+            const coin = document.createElement('div');
+            coin.className = 'coin';
+            
+            // Random position within the game container
+            const coinX = Math.random() * (gameContainer.clientWidth - 20);
+            const coinY = Math.random() * (gameContainer.clientHeight - 20);
+            
+            coin.style.left = coinX + 'px';
+            coin.style.top = coinY + 'px';
+            
+            gameContainer.appendChild(coin);
+            coins.push({
+                element: coin,
+                x: coinX,
+                y: coinY
+            });
+        }
+        
+        // Check for collisions between entity and coins
+        function checkCoinCollisions(entity, isHelper) {
+            const entityRect = entity.getBoundingClientRect();
+            
+            for (let i = coins.length - 1; i >= 0; i--) {
+                const coinRect = coins[i].element.getBoundingClientRect();
+                
+                // Check for collision
+                if (
+                    entityRect.left < coinRect.right &&
+                    entityRect.right > coinRect.left &&
+                    entityRect.top < coinRect.bottom &&
+                    entityRect.bottom > coinRect.top
+                ) {
+                    // Remove the coin
+                    coins[i].element.remove();
+                    coins.splice(i, 1);
+                    
+                    // Increment coin count
+                    coinCount++;
+                    coinCountElement.textContent = coinCount;
+                    
+                    // Create a new coin if it's the player collecting
+                    if (!isHelper) {
+                        createCoin();
+                    } else {
+                        // If helper has collected enough coins to reach goal, end the game
+                        if (coinCount >= coinsToCollect) {
+                            setTimeout(() => {
+                                endGame();
+                            }, 500);
+                        } else if (coins.length === 0 && coinCount < coinsToCollect) {
+                            // Create more coins for the helper to collect
+                            for (let j = 0; j < 5; j++) {
+                                createCoin();
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        
+        // Activate the helper
+        function activateHelper() {
+            // Pause the game briefly to show helper message
+            gameActive = false;
+            clearInterval(timerInterval);
+            
+            // Show helper message
+            helperMessageScreen.style.display = 'flex';
+            
+            // After a brief delay, bring in the helper
+            setTimeout(() => {
+                helperMessageScreen.style.display = 'none';
+                helperActive = true;
+                gameActive = true;
+                
+                // Create more coins if needed to reach goal
+                const coinsNeeded = coinsToCollect - coinCount;
+                
+                // Add extra coins up to what's needed
+                for (let i = 0; i < Math.min(coinsNeeded, 20) - coins.length; i++) {
+                    createCoin();
+                }
+                
+                // Position helper at the top of the game
+                helperX = gameContainer.clientWidth / 2 - 20;
+                helperY = 0;
+                helper.style.left = helperX + 'px';
+                helper.style.top = helperY + 'px';
+                helper.style.display = 'block';
+                
+                // Restart the game loop
+                gameLoop();
+            }, 3000);
+        }
+        
+        // Move helper towards the nearest coin
+        function moveHelperTowardsCoin() {
+            if (coins.length === 0) {
+                // Create more coins if needed
+                if (coinCount < coinsToCollect) {
+                    for (let i = 0; i < 5; i++) {
+                        createCoin();
+                    }
+                }
+                return;
+            }
+            
+            // Find nearest coin
+            let nearestCoin = coins[0];
+            let nearestDistance = Infinity;
+            
+            coins.forEach(coin => {
+                const dx = coin.x - helperX;
+                const dy = coin.y - helperY;
+                const distance = Math.sqrt(dx * dx + dy * dy);
+                
+                if (distance < nearestDistance) {
+                    nearestDistance = distance;
+                    nearestCoin = coin;
+                }
+            });
+            
+            // Move towards the nearest coin
+            const helperSpeed = 10; // Helper moves faster than player
+            const dx = nearestCoin.x - helperX;
+            const dy = nearestCoin.y - helperY;
+            const distance = Math.sqrt(dx * dx + dy * dy);
+            
+            if (distance > 0) {
+                helperX += (dx / distance) * helperSpeed;
+                helperY += (dy / distance) * helperSpeed;
+            }
+        }
+        
+        // End the game
+        function endGame() {
+            gameActive = false;
+            helperActive = false;
+            clearInterval(timerInterval);
+            cancelAnimationFrame(helperAnimationFrame);
+            
+            // Draw pixel Jesus on canvas
+            drawPixelJesus();
+            
+            // Hide helper
+            helper.style.display = 'none';
+            
+            // Show game over screen
+            gameOverScreen.style.display = 'flex';
+        }
+        
+        // Draw pixelated Jesus/Cross
+        function drawPixelJesus() {
+            const ctx = pixelJesus.getContext('2d');
+            ctx.clearRect(0, 0, pixelJesus.width, pixelJesus.height);
+            
+            // Set background
+            ctx.fillStyle = '#0a1929';
+            ctx.fillRect(0, 0, pixelJesus.width, pixelJesus.height);
+            
+            // Draw a simple cross - with a blue/white theme
+            ctx.fillStyle = '#4fc3f7';
+            
+            // Vertical part of cross
+            for (let y = 8; y < 28; y++) {
+                for (let x = 14; x < 18; x++) {
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+            
+            // Horizontal part of cross
+            for (let y = 12; y < 16; y++) {
+                for (let x = 8; x < 24; x++) {
+                    ctx.fillRect(x, y, 1, 1);
+                }
+            }
+            
+            // Draw halo
+            ctx.fillStyle = '#ffffff';
+            for (let i = 0; i < 12; i++) {
+                const angle = (i / 12) * Math.PI * 2;
+                const x = Math.floor(16 + Math.cos(angle) * 5);
+                const y = Math.floor(8 + Math.sin(angle) * 3);
+                ctx.fillRect(x, y, 1, 1);
+            }
+        }
+        
+        // Event listeners
+        document.addEventListener('keydown', (e) => {
+            keys[e.key] = true;
+        });
+        
+        document.addEventListener('keyup', (e) => {
+            keys[e.key] = false;
+        });
+        
+        startButton.addEventListener('click', init);
+        playAgainButton.addEventListener('click', init);
+        
+        // Set up initial state - show start screen
+        player.style.left = playerX + 'px';
+        player.style.top = playerY + 'px';
+        hud.style.display = 'none';
+    </script>
+</body>
+</html>
